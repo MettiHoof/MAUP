@@ -19,24 +19,110 @@ print"The script is starting"
 ############################
 import matplotlib.pyplot as plt  #For interactive plotting
 import matplotlib.gridspec as gridspec #For specifying grids in matplotlib figure
+import matplotlib.patches as patches #For rectangles
 import pandas as pd #For data handling
 import numpy as np #For fast array handling
 import math # For some math expressions
-
+import statsmodels.api as sm #For statistical analysis
+from statsmodels.stats.outliers_influence import summary_table #For summarizing statistical analysis
+#import brewer2mpl #For color brewing
 ############################
 #0.2 Setup in and output paths
 ############################
 
 
 ########################################################
-#1. Create data 
+#1. Create example data 
 ########################################################
 
-x=np.random.random_sample(10)
-y=np.random.random_sample(10)
+#Number of points we will consider
+n=80
 
-x_coord=np.random.random_sample(10)
-y_coord=np.random.random_sample(10)
+############################
+#1.1 Create data for spatial pattern (x and y coordinates)
+############################
+#We try to mimic two streets and some random houses
+
+#Mimic a street with houses around by means of random divergence from a linear regression
+#Street one has got 60% of the houses
+share_street1=0.6
+intercept_y_street1= 0.9
+coef_street1= -0.74
+error_street1=np.random.random_sample(int(n*share_street1))*0.04 #small error term
+
+x_coord_street1=np.random.random_sample(int(n*share_street1))
+y_coord_street1 = intercept_y_street1 + x_coord_street1*coef_street1 + error_street1
+
+#Street two has got 30% of the houses
+share_street2=0.30
+intercept_y_street2=-0.4
+x_min_street2=0.4
+x_max_street2=1
+coef_street2= 1.4
+error_street2=np.random.random_sample(int(n*share_street2))*0.04 #small error term
+
+x_coord_street2=np.random.randint(int(x_min_street2*1000), int(x_max_street2*1000), size=int(n*share_street2))*0.001
+y_coord_street2 = intercept_y_street2 + x_coord_street2*coef_street2 + error_street2
+
+# Ten percent of households are located at random
+share_random=0.1
+x_coord_rand=np.random.random_sample(int(n*share_random))
+y_coord_rand=np.random.random_sample(int(n*share_random))
+
+#Put created coordinate data together
+x_coord=np.concatenate((x_coord_street1, x_coord_street2, x_coord_rand))
+y_coord=np.concatenate((y_coord_street1, y_coord_street2, y_coord_rand))
+
+
+############################
+#1.2 Create data for value observations (x and y)
+############################
+
+#Create x and y data, which we pretend to be figures on income and annual sick days
+
+#income (x) from normal poission distribution around 40k
+lamda = 40 # mean and standard deviation
+x=np.random.poisson(lamda,n)*1000
+x_label='income per year'
+
+#number of annual sick days (y) from uniform distribution
+y_min, y_max = 1,20
+y = np.random.randint(low=y_min, high=y_max, size=n)
+y_label='sick days per year'
+
+############################
+#1.3 Put all data together in a dataframe
+############################
+
+#Creata and store a pandas dataframe
+df = pd.DataFrame(columns = ['x_coord', 'y_coord', 'income','sickdays'])
+df['x_coord'] = x_coord
+df['y_coord'] = y_coord
+df['income'] = x
+df['sickdays'] = y
+
+
+############################
+#1.4 Create some kind of spatial effect
+############################
+
+#We create a spatial effect by introducing an income gradient from south-west to north-east
+df['income']=df['income']*(df['x_coord']*df['y_coord']+0.6)
+
+############################
+#1.5 Split dataframe for different deliniations
+############################
+
+#df[df['first_name'].notnull() & (df['nationality'] == "USA")]
+
+df2_1=df[df['x_coord']<0.5].copy()
+df2_2=df[df['x_coord']>0.5].copy()
+
+
+df4_1=df[(df['x_coord']<0.5) & (df['y_coord']>0.5)].copy()
+df4_2=df[(df['x_coord']<0.5) & (df['y_coord']<0.5)].copy()
+df4_3=df[(df['x_coord']>0.5) & (df['y_coord']>0.5)].copy()
+df4_4=df[(df['x_coord']>0.5) & (df['y_coord']<0.5)].copy()
 
 ########################################################
 #2. Create visualisation
@@ -54,13 +140,13 @@ fig=plt.figure(figsize=(figsize_x_inches,figsize_y_inches))
 
 #Setting up gridSpecs
 gs_map=gridspec.GridSpec(3,1) #nrows,ncols
-gs_map.update(left=0.02, right=0.33, bottom=0.02, top=0.98, hspace=0.1) #update position of grid in figure
+gs_map.update(left=0.02, right=0.25, bottom=0.03, top=0.95, hspace=0.15) #update position of grid in figure
 
 gs_hist=gridspec.GridSpec(3,1) #nrows,ncols
-gs_hist.update(left=0.36, right=0.63, bottom=0.02, top=0.98, hspace=0.1) #update position of grid in figure
+gs_hist.update(left=0.36, right=0.63, bottom=0.05, top=0.95, hspace=0.3) #update position of grid in figure
 
 gs_corr=gridspec.GridSpec(3,1) #nrows,ncols
-gs_corr.update(left=0.66, right=0.98, bottom=0.02, top=0.98, hspace=0.1) #update position of grid in figure
+gs_corr.update(left=0.75, right=0.98, bottom=0.05, top=0.95, hspace=0.3) #update position of grid in figure
 
 
 #Naming gridblocks
@@ -79,49 +165,352 @@ ax_corr2=plt.subplot(gs_corr[2,0])
 
 
 ############################
-#2.2 Plot figure, insert
+#2.1 Setup colors
 ############################
+'''
+bmap = brewer2mpl.get_map('Set2', 'qualitative', 2)
+colorbrew=bmap.hex_colors
+#colorbrew.append('#808080') #put extra color grey to end because set2 only goes to 8 and we need 9 colors.
+color_dict2={'21':colorbrew[0],
+			'22':colorbrew[1]}
 
-#Create maps based on coordinates of data
-ax_map0.scatter(x_coord,y_coord)
-ax_map0.scatter(x_coord,y_coord)
-ax_map0.scatter(x_coord,y_coord)
 
-#Create hist based on input data
-ax_hist0.hist(x)
-ax_hist1.hist(x)
-ax_hist2.hist(x)
+bmap = brewer2mpl.get_map('Set2', 'qualitative', 4)
+colorbrew=bmap.hex_colors
+#colorbrew.append('#808080') #put extra color grey to end because set2 only goes to 8 and we need 9 colors.
+color_dict4={'41':colorbrew[0],
+			'42':colorbrew[1],
+			'43':colorbrew[2],
+			'44':colorbrew[3]}
+'''
 
-#Create corr based on input data
+
+############################
+#2.2 Plot figures based on input data
+############################
+#Create combinations of different subplots together to be more efficient
+maps=[ax_map0,ax_map1,ax_map2]
+hists=[ax_hist0,ax_hist1,ax_hist2]
+corrs=[ax_corr0,ax_corr1,ax_corr2]
+
+
+#############
+#Maps
+#############
+#Create maps based on input data for coordinates
+ax_map0.scatter(df['x_coord'],df['y_coord'], c=df['income'])
+
+ax_map1.scatter(df2_1['x_coord'],df2_1['y_coord'])#, c=color_dict2['21'])
+ax_map1.scatter(df2_2['x_coord'],df2_2['y_coord'])#, c=color_dict2['22'])
+
+ax_map2.scatter(df4_1['x_coord'],df4_1['y_coord'])#, c=color_dict4['41'])
+ax_map2.scatter(df4_2['x_coord'],df4_2['y_coord'])#, c=color_dict4['42'])
+ax_map2.scatter(df4_3['x_coord'],df4_3['y_coord'])#, c=color_dict4['43'])
+ax_map2.scatter(df4_4['x_coord'],df4_4['y_coord'])#, c=color_dict4['44'])
+
+
+#############
+#Hists
+#############
+#Create hist based on input data for variables
+#for hist_ax in hists:
+#	hist_ax.hist(x)
+
+
+#ax_hist0
+ax_hist0.hist(df['income'])
+
+#ax_hist1
+ax_hist1.hist(df2_1['income'])
+ax_hist1.hist(df2_2['income'])
+
+#ax_hist2
+ax_hist2.hist(df4_1['income'])
+ax_hist2.hist(df4_2['income'])
+ax_hist2.hist(df4_3['income'])
+ax_hist2.hist(df4_4['income'])
+
+
+
+#############
+#Corrs
+#############
+#Create corr based on input data for variables 
+
+#Define helper function to calculated trendlines and confidence intervals
+def regr_to_plot(x,y):
+	print x
+	print y
+
+
+	z = np.polyfit(x,y, 1)
+	p = np.poly1d(z)
+
+	fitted_y_values=p(x)
+	#ax0.plot(df_filled[x],p(df_filled[x]),':',c='grey',lw=1)
+	'''
+	#Get trendline by linear regression
+	regr = sm.OLS(y, x)
+	regr_result = regr.fit()
+	st, regr_data, headers = summary_table(regr_result, alpha=0.05)
+	fitted_y_values = regr_data[:,2]
+	predict_mean_ci_low, predict_mean_ci_upp = regr_data[:,4:6].T
+
+	# Data for regions where we want to shade to indicate the intervals has to be sorted by the x axis to display correctly
+	CI_df = pd.DataFrame(columns = ['x_data', 'low_CI', 'upper_CI'])
+	CI_df['x_data'] = x
+	CI_df['low_CI'] = predict_mean_ci_low
+	CI_df['upper_CI'] = predict_mean_ci_upp
+	CI_df.sort_values('x_data', inplace = True)
+	'''
+
+	return fitted_y_values,1,1,1 #CI_df['x_data'], CI_df['low_CI'], CI_df['upper_CI']
+
+'''
+#Plot scatter, regression line and interval
+for corr_ax in corrs:
+
+	#Get data for each corr based on partitions
+	fitted_y_values, x_for_shade, low_CI_for_shade, high_CI_for_shade=regr_to_plot(x,y)
+
+
+	#Plot scatter, regression line and interval
+	corr_ax.scatter(x,y)
+	corr_ax.plot(x, fitted_y_values, lw = 2, color = '#539caf', alpha = 1)
+	corr_ax.fill_between(x_for_shade, low_CI_for_shade, high_CI_for_shade, color = '#539caf', alpha = 0.4, label = '95% CI')
+
+'''
+#ax_corr0
+ax_corr0.scatter(df['income'],df['sickdays'])
+fitted_y_values0, x_for_shade0, low_CI_for_shade0, high_CI_for_shade0=regr_to_plot(df['income'],df['sickdays'])
+ax_corr0.plot(df['income'],fitted_y_values0,lw = 2,color = '#539caf', alpha = 1)
+#ax_corr0.fill_between(x_for_shade0, low_CI_for_shade0, high_CI_for_shade0, color = '#539caf', alpha = 0.4, label = '95% CI')
+
+#ax_corr1
+ax_corr1.scatter(df2_1['income'].mean(),df2_1['sickdays'].mean(),marker="s")#, c=color_dict2['21'])
+ax_corr1.scatter(df2_2['income'].mean(),df2_2['sickdays'].mean(),marker="s")#, c=color_dict2['22'])
+
+income_agg_for_2=[df2_1['income'].mean(),df2_2['income'].mean()]
+sickdays_agg_for_2=[df2_1['sickdays'].mean(),df2_2['sickdays'].mean()]
+
+fitted_y_values1, x_for_shade1, low_CI_for_shade1, high_CI_for_shade1=regr_to_plot(income_agg_for_2,sickdays_agg_for_2)
+ax_corr1.plot(income_agg_for_2,fitted_y_values1,lw = 2,color = '#539caf', alpha = 1)
+#ax_corr1.fill_between(x_for_shade1, low_CI_for_shade1, high_CI_for_shade1, color = '#539caf', alpha = 0.4, label = '95% CI')
+
+#ax_corr2
+ax_corr2.scatter(df4_1['income'].mean(),df4_1['sickdays'].mean(),marker="s")#, c=color_dict4['41'])
+ax_corr2.scatter(df4_2['income'].mean(),df4_2['sickdays'].mean(),marker="s")#, c=color_dict4['42'])
+ax_corr2.scatter(df4_3['income'].mean(),df4_3['sickdays'].mean(),marker="s")#, c=color_dict4['43'])
+ax_corr2.scatter(df4_4['income'].mean(),df4_4['sickdays'].mean(),marker="s")#, c=color_dict4['44'])
+
+income_agg_for_4=[df4_1['income'].mean(),df4_2['income'].mean(),df4_3['income'].mean(),df4_4['income'].mean()]
+sickdays_agg_for_4=[df4_1['sickdays'].mean(),df4_2['sickdays'].mean(),df4_3['sickdays'].mean(),df4_4['sickdays'].mean()]
+
+fitted_y_values2, x_for_shade2, low_CI_for_shade2, high_CI_for_shade2=regr_to_plot(income_agg_for_4,sickdays_agg_for_4)
+ax_corr2.plot(income_agg_for_4,fitted_y_values2,lw = 2,color = '#539caf', alpha = 1)
+#ax_corr2.fill_between(x_for_shade2, low_CI_for_shade2, high_CI_for_shade2, color = '#539caf', alpha = 0.4, label = '95% CI')
+
+
+
+
+'''
+ax_corr1.scatter(df2_1['x_coord'],df2_1['y_coord'])#, c=color_dict2['21'])
+ax_corr1.scatter(df2_2['x_coord'],df2_2['y_coord'])#, c=color_dict2['22'])
+
+ax_corr2.scatter(df4_1['x_coord'],df4_1['y_coord'])#, c=color_dict4['41'])
+ax_corr2.scatter(df4_2['x_coord'],df4_2['y_coord'])#, c=color_dict4['42'])
+ax_corr2.scatter(df4_3['x_coord'],df4_3['y_coord'])#, c=color_dict4['43'])
+ax_corr2.scatter(df4_4['x_coord'],df4_4['y_coord'])#, c=color_dict4['44'])
+'''
+
+'''
 ax_corr0.scatter(x,y)
+fitted_y_values, x_for_shade, low_CI_for_shade, high_CI_for_shade=regr_to_plot(x,y)
+ax_corr0.plot(x, fitted_y_values, lw = 2, color = '#539caf', alpha = 1)
+ax_corr0.fill_between(x_for_shade, low_CI_for_shade, high_CI_for_shade, color = '#539caf', alpha = 0.4, label = '95% CI')
 
-#Get and plot trendilne
-z = np.polyfit(x,y, 1)
-p = np.poly1d(z)
-xhelp=range(int(math.floor(ax_corr0.get_xlim()[0])),
-			int(math.ceil(ax_corr0.get_xlim()[1])))
-eq_line=ax_corr0.plot(xhelp, p(xhelp),ls='--',lw=1,color='.5',alpha=1)
+
+#Plot scatter, regression line and interval
+ax_corr1.scatter(x,y)
+fitted_y_values, x_for_shade, low_CI_for_shade, high_CI_for_shade=regr_to_plot(x,y)
+ax_corr1.plot(x, fitted_y_values, lw = 2, color = '#539caf', alpha = 1)
+ax_corr1.fill_between(x_for_shade, low_CI_for_shade, high_CI_for_shade, color = '#539caf', alpha = 0.4, label = '95% CI')
+
+
+#Plot scatter, regression line and interval
+ax_corr2.scatter(x,y)
+fitted_y_values, x_for_shade, low_CI_for_shade, high_CI_for_shade=regr_to_plot(x,y)
+ax_corr2.plot(x, fitted_y_values, lw = 2, color = '#539caf', alpha = 1)
+ax_corr2.fill_between(x_for_shade, low_CI_for_shade, high_CI_for_shade, color = '#539caf', alpha = 0.4, label = '95% CI')
+'''
 
 ############################
 #2.3 Make up figures
 ############################
 
-#Map subplots -we hard code for each subplot here, probably there is a more efficient way
-ax_map0.get_xaxis().set_visible(False)
-ax_map0.get_yaxis().set_visible(False)
+#Create combinations of different subplots together to be more efficient
+maps=[ax_map0,ax_map1,ax_map2]
+hists=[ax_hist0,ax_hist1,ax_hist2]
+corrs=[ax_corr0,ax_corr1,ax_corr2]
+subplots=[]
+subplots.extend(maps)
+subplots.extend(hists)
+subplots.extend(corrs)
 
-ax_map1.get_xaxis().set_visible(False)
-ax_map1.get_yaxis().set_visible(False)
+#############
+#All maps
+#############
+for map_ax in maps:
+	#Omit x and y axis of the coordinates
+	map_ax.get_xaxis().set_visible(False)
+	map_ax.get_yaxis().set_visible(False)
 
-ax_map2.get_xaxis().set_visible(False)
-ax_map2.get_yaxis().set_visible(False)
+	#Fix y-axis
+	map_ax.set_ylim(0,1)
 
+#############
+#All hists
+#############
+for hist_ax in hists:
+	#Set labels
+	hist_ax.set_xlabel(x_label)
+	hist_ax.set_ylabel('# of observations')
+
+#############
+#All corrs
+#############
+for corr_ax in corrs:
+	#Set labels 
+	corr_ax.set_xlabel(x_label)
+	corr_ax.set_ylabel(y_label)
+
+	corr_ax.set_xlim(df['income'].min()-1000,df['income'].max()+1000)
+	corr_ax.set_ylim(0,df['sickdays'].max()+1)
+
+#############
+#Ax_map0
+#############
+#Set title
+title_ax_map0= 'Household locations'
+ax_map0.set_title(title_ax_map0,fontsize=10)
+
+#Set n=x box
+n_obs_1=_str=df.shape[0]
+n_text_1= 'n = %s' %n_obs_1
+ax_map0.text(0.03,0.05, n_text_1, ha='left', va='bottom', fontsize=7, color='0.2',
+           bbox={'facecolor':'white', 'alpha':0.9,'edgecolor':'0.2','ls':'--','lw':'0.4'},
+           transform=ax_map0.transAxes)
+
+#############
+#Ax_map1
+#############
+
+ax_map1.axvline(0.5, color='grey', lw=2)
+
+'''
+# Create a Rectangle patch
+rect2_1 = patches.Rectangle((0.01,0.01),0.49,0.98,lw=1,edgecolor='r',facecolor='none',
+		transform=ax_map1.transAxes)
+rect2_2 = patches.Rectangle((0.51,0.01),0.48,0.98,lw=1,edgecolor='b',facecolor='none',
+		transform=ax_map1.transAxes)
+
+# Add patches to figure 
+ax_map1.add_patch(rect2_1)
+ax_map1.add_patch(rect2_2)
+
+# Fade out the standard frame
+#for pos in ['top','bottom','left','right']:
+    #ax_map1.spines[pos].set_linewidth(0.5)
+    #ax_map1.spines[pos].set_color('0.6')
+'''
+
+#Set n=x box
+n_obs_21=_str=df2_1.shape[0]
+n_text_21= 'n = %s' %n_obs_21
+ax_map1.text(0.03,0.05, n_text_21, ha='left', va='bottom', fontsize=7, color='0.2',
+           bbox={'facecolor':'white', 'alpha':0.9,'edgecolor':'0.2','ls':'--','lw':'0.4'},
+           transform=ax_map1.transAxes)
+
+n_obs_22=_str=df2_2.shape[0]
+n_text_22= 'n = %s' %n_obs_22
+ax_map1.text(0.97,0.05, n_text_22, ha='right', va='bottom', fontsize=7, color='0.2',
+           bbox={'facecolor':'white', 'alpha':0.9,'edgecolor':'0.2','ls':'--','lw':'0.4'},
+           transform=ax_map1.transAxes)
+
+
+
+#############
+#Ax_map2
+#############
+
+ax_map2.axvline(0.5, color='grey', lw=2)
+ax_map2.axhline(0.5, color='grey', lw=2)
+
+#Set n=x box
+
+n_obs_41=_str=df4_1.shape[0]
+n_text_41= 'n = %s' %n_obs_41
+ax_map2.text(0.03,0.55, n_text_41, ha='left', va='bottom', fontsize=7, color='0.2',
+           bbox={'facecolor':'white', 'alpha':0.9,'edgecolor':'0.2','ls':'--','lw':'0.4'},
+           transform=ax_map2.transAxes)
+
+
+n_obs_42=_str=df4_2.shape[0]
+n_text_42= 'n = %s' %n_obs_42
+ax_map2.text(0.03,0.05, n_text_42, ha='left', va='bottom', fontsize=7, color='0.2',
+           bbox={'facecolor':'white', 'alpha':0.9,'edgecolor':'0.2','ls':'--','lw':'0.4'},
+           transform=ax_map2.transAxes)
+
+n_obs_43=_str=df4_3.shape[0]
+n_text_43= 'n = %s' %n_obs_43
+ax_map2.text(0.97,0.55, n_text_43, ha='right', va='bottom', fontsize=7, color='0.2',
+           bbox={'facecolor':'white', 'alpha':0.9,'edgecolor':'0.2','ls':'--','lw':'0.4'},
+           transform=ax_map2.transAxes)
+
+n_obs_44=_str=df4_4.shape[0]
+n_text_44= 'n = %s' %n_obs_44
+ax_map2.text(0.97,0.05, n_text_44, ha='right', va='bottom', fontsize=7, color='0.2',
+           bbox={'facecolor':'white', 'alpha':0.9,'edgecolor':'0.2','ls':'--','lw':'0.4'},
+           transform=ax_map2.transAxes)
+
+
+#############
+#Ax_hist0
+#############
+
+
+#############
+#Ax_hist1
+#############\
+
+#############
+#Ax_hist2
+#############
+
+#############
+#Ax_corr0
+#############
+title_ax_corr0= 'Observed correlations'
+ax_corr0.set_title(title_ax_corr0,fontsize=10)
+
+#############
+#Ax_corr1
+#############
+
+#############
+#Ax_corr2
+#############
 
 
 ############################
 #2.4 Save or show
 ############################
 plt.show()
+
+#outputfile='/Users/Metti_Hoof/Desktop/maupvis.png'
+#plt.savefig(outputfile)
+
+
 
 '''
 

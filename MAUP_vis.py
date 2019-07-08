@@ -25,7 +25,7 @@ import numpy as np #For fast array handling
 import math # For some math expressions
 import statsmodels.api as sm #For statistical analysis
 from statsmodels.stats.outliers_influence import summary_table #For summarizing statistical analysis
-#import brewer2mpl #For color brewing
+import brewer2mpl #For color brewing
 ############################
 #0.2 Setup in and output paths
 ############################
@@ -138,75 +138,124 @@ figsize_y_inches=7.5
 
 fig=plt.figure(figsize=(figsize_x_inches,figsize_y_inches))
 
-#Setting up gridSpecs
+
+#Setting up large gridSpecs
 gs_map=gridspec.GridSpec(3,1) #nrows,ncols
-gs_map.update(left=0.02, right=0.25, bottom=0.03, top=0.95, hspace=0.15) #update position of grid in figure
+gs_map.update(left=0.02, right=0.28, bottom=0.03, top=0.90, hspace=0.15) #update position of grid in figure
 
 gs_hist=gridspec.GridSpec(3,1) #nrows,ncols
-gs_hist.update(left=0.36, right=0.63, bottom=0.05, top=0.95, hspace=0.3) #update position of grid in figure
+gs_hist.update(left=0.36, right=0.70, bottom=0.05, top=0.90, hspace=0.3) #update position of grid in figure
 
 gs_corr=gridspec.GridSpec(3,1) #nrows,ncols
-gs_corr.update(left=0.75, right=0.98, bottom=0.05, top=0.95, hspace=0.3) #update position of grid in figure
+gs_corr.update(left=0.75, right=0.98, bottom=0.05, top=0.90, hspace=0.3) #update position of grid in figure
 
+#Setting up inner gridspecs
+gs_map_inner=gridspec.GridSpecFromSubplotSpec(11,20,subplot_spec=gs_map[0,0])
+
+gs_hist0_inner=gridspec.GridSpecFromSubplotSpec(1,2,subplot_spec=gs_hist[0,0])
+gs_hist1_inner=gridspec.GridSpecFromSubplotSpec(2,2,subplot_spec=gs_hist[1,0])
+gs_hist2_inner=gridspec.GridSpecFromSubplotSpec(2,4,subplot_spec=gs_hist[2,0])
 
 #Naming gridblocks
-ax_map0=plt.subplot(gs_map[0,0])
+#ax_map0=plt.subplot(gs_map[0,0]) #row,col
+ax_map0_0=plt.subplot(gs_map_inner[0:10,0:14]) #For a SubplotSpec that spans multiple cells, use slice.
+ax_map0_1=plt.subplot(gs_map_inner[0:4,14:20])
+ax_map1_1=plt.subplot(gs_map_inner[6:10,14:20])
+
 ax_map1=plt.subplot(gs_map[1,0])
 ax_map2=plt.subplot(gs_map[2,0])
 
-ax_hist0=plt.subplot(gs_hist[0,0])
-ax_hist1=plt.subplot(gs_hist[1,0])
-ax_hist2=plt.subplot(gs_hist[2,0])
 
+ax_hist0_0=plt.subplot(gs_hist0_inner[0,0])#row,col
+ax_hist0_1=plt.subplot(gs_hist0_inner[0,1])
+
+
+ax_hist1_0=plt.subplot(gs_hist1_inner[0,0])#row,col
+ax_hist1_1=plt.subplot(gs_hist1_inner[0,1])
+ax_hist2_0=plt.subplot(gs_hist1_inner[1,0])
+ax_hist2_1=plt.subplot(gs_hist1_inner[1,1])
+
+ax_hist3_0=plt.subplot(gs_hist2_inner[0,0])#row,col
+ax_hist3_1=plt.subplot(gs_hist2_inner[0,1])
+ax_hist3_2=plt.subplot(gs_hist2_inner[0,2])#row,col
+ax_hist3_3=plt.subplot(gs_hist2_inner[0,3])
+
+ax_hist4_0=plt.subplot(gs_hist2_inner[1,0])
+ax_hist4_1=plt.subplot(gs_hist2_inner[1,1])
+ax_hist4_2=plt.subplot(gs_hist2_inner[1,2])
+ax_hist4_3=plt.subplot(gs_hist2_inner[1,3])
+
+'''
+ax_hist0_0=plt.subplot(gs_hist[0,0])
+ax_hist1_0=plt.subplot(gs_hist[1,0])
+ax_hist2_0=plt.subplot(gs_hist[2,0])
+ax_hist3_0=plt.subplot(gs_hist[3,0])
+ax_hist4_0=plt.subplot(gs_hist[4,0])
+ax_hist5_0=plt.subplot(gs_hist[5,0])
+
+ax_hist0_1=plt.subplot(gs_hist[0,1])
+ax_hist1_1=plt.subplot(gs_hist[1,1])
+ax_hist2_1=plt.subplot(gs_hist[2,1])
+ax_hist3_1=plt.subplot(gs_hist[3,1])
+ax_hist4_1=plt.subplot(gs_hist[4,1])
+ax_hist5_1=plt.subplot(gs_hist[5,1])
+'''
 
 ax_corr0=plt.subplot(gs_corr[0,0])
 ax_corr1=plt.subplot(gs_corr[1,0])
 ax_corr2=plt.subplot(gs_corr[2,0])
 
 
+#Create combinations of different subplots together to be more efficient
+maps=[ax_map0_0,ax_map0_1,ax_map1_1,ax_map1,ax_map2]
+hists=[ax_hist0_0,ax_hist0_1,ax_hist1_0,ax_hist1_1,ax_hist2_0,ax_hist2_1,ax_hist3_0,ax_hist3_1,ax_hist3_2,ax_hist3_3,ax_hist4_0,ax_hist4_1,ax_hist4_2,ax_hist4_3]
+corrs=[ax_corr0,ax_corr1,ax_corr2]
+subplots=[]
+subplots.extend(maps)
+subplots.extend(hists)
+subplots.extend(corrs)
+
 ############################
 #2.1 Setup colors
 ############################
-'''
-bmap = brewer2mpl.get_map('Set2', 'qualitative', 2)
+
+bmap = brewer2mpl.get_map('Set2', 'qualitative', 3)
 colorbrew=bmap.hex_colors
 #colorbrew.append('#808080') #put extra color grey to end because set2 only goes to 8 and we need 9 colors.
-color_dict2={'21':colorbrew[0],
-			'22':colorbrew[1]}
+color_dict2={'2_1':colorbrew[0],
+			'2_2':colorbrew[1]}
 
 
 bmap = brewer2mpl.get_map('Set2', 'qualitative', 4)
 colorbrew=bmap.hex_colors
 #colorbrew.append('#808080') #put extra color grey to end because set2 only goes to 8 and we need 9 colors.
-color_dict4={'41':colorbrew[0],
-			'42':colorbrew[1],
-			'43':colorbrew[2],
-			'44':colorbrew[3]}
-'''
+color_dict4={'4_1':colorbrew[0],
+			'4_2':colorbrew[1],
+			'4_3':colorbrew[2],
+			'4_4':colorbrew[3]}
+
 
 
 ############################
 #2.2 Plot figures based on input data
 ############################
-#Create combinations of different subplots together to be more efficient
-maps=[ax_map0,ax_map1,ax_map2]
-hists=[ax_hist0,ax_hist1,ax_hist2]
-corrs=[ax_corr0,ax_corr1,ax_corr2]
-
 
 #############
 #Maps
 #############
 #Create maps based on input data for coordinates
-ax_map0.scatter(df['x_coord'],df['y_coord'], c=df['income'])
+ax_map0_0.scatter(df['x_coord'],df['y_coord'])
 
-ax_map1.scatter(df2_1['x_coord'],df2_1['y_coord'])#, c=color_dict2['21'])
-ax_map1.scatter(df2_2['x_coord'],df2_2['y_coord'])#, c=color_dict2['22'])
+ax_map0_1.scatter(df['x_coord'],df['y_coord'],c=df['income'], s=6)
+ax_map1_1.scatter(df['x_coord'],df['y_coord'],c=df['sickdays'], s=6)
 
-ax_map2.scatter(df4_1['x_coord'],df4_1['y_coord'])#, c=color_dict4['41'])
-ax_map2.scatter(df4_2['x_coord'],df4_2['y_coord'])#, c=color_dict4['42'])
-ax_map2.scatter(df4_3['x_coord'],df4_3['y_coord'])#, c=color_dict4['43'])
-ax_map2.scatter(df4_4['x_coord'],df4_4['y_coord'])#, c=color_dict4['44'])
+ax_map1.scatter(df2_1['x_coord'],df2_1['y_coord'],color=color_dict2['2_1'])#, c=color_dict2['21'])
+ax_map1.scatter(df2_2['x_coord'],df2_2['y_coord'],color=color_dict2['2_2'])#, c=color_dict2['22'])
+
+ax_map2.scatter(df4_1['x_coord'],df4_1['y_coord'],c=color_dict4['4_1'])#, c=color_dict4['4_1'])
+ax_map2.scatter(df4_2['x_coord'],df4_2['y_coord'],c=color_dict4['4_2'])#, c=color_dict4['4_2'])
+ax_map2.scatter(df4_3['x_coord'],df4_3['y_coord'],c=color_dict4['4_3'])#, c=color_dict4['4_3'])
+ax_map2.scatter(df4_4['x_coord'],df4_4['y_coord'],c=color_dict4['4_4'])#, c=color_dict4['4_4'])
 
 
 #############
@@ -217,18 +266,30 @@ ax_map2.scatter(df4_4['x_coord'],df4_4['y_coord'])#, c=color_dict4['44'])
 #	hist_ax.hist(x)
 
 
-#ax_hist0
-ax_hist0.hist(df['income'])
+#ax_hist all together delineation
+ax_hist0_0.hist(df['income'])
+ax_hist0_1.hist(df['sickdays'])
 
-#ax_hist1
-ax_hist1.hist(df2_1['income'])
-ax_hist1.hist(df2_2['income'])
+#ax_hist first delineation
+ax_hist1_0.hist(df2_1['income'],color=color_dict2['2_1'])
+ax_hist1_1.hist(df2_1['sickdays'],color=color_dict2['2_1'])
 
-#ax_hist2
-ax_hist2.hist(df4_1['income'])
-ax_hist2.hist(df4_2['income'])
-ax_hist2.hist(df4_3['income'])
-ax_hist2.hist(df4_4['income'])
+ax_hist2_0.hist(df2_2['income'],color=color_dict2['2_2'])
+ax_hist2_1.hist(df2_2['sickdays'],color=color_dict2['2_2'])
+
+
+#ax_hist second delineation
+ax_hist3_0.hist(df4_1['income'],color=color_dict4['4_1'])
+ax_hist3_1.hist(df4_1['sickdays'],color=color_dict4['4_1'])
+
+ax_hist3_2.hist(df4_3['income'],color=color_dict4['4_3'])
+ax_hist3_3.hist(df4_3['sickdays'],color=color_dict4['4_3'])
+
+ax_hist4_0.hist(df4_2['income'],color=color_dict4['4_2'])
+ax_hist4_1.hist(df4_2['sickdays'],color=color_dict4['4_2'])
+
+ax_hist4_2.hist(df4_4['income'],color=color_dict4['4_4'])
+ax_hist4_3.hist(df4_4['sickdays'],color=color_dict4['4_4'])
 
 
 
@@ -239,10 +300,6 @@ ax_hist2.hist(df4_4['income'])
 
 #Define helper function to calculated trendlines and confidence intervals
 def regr_to_plot(x,y):
-	print x
-	print y
-
-
 	z = np.polyfit(x,y, 1)
 	p = np.poly1d(z)
 
@@ -348,14 +405,17 @@ ax_corr2.fill_between(x_for_shade, low_CI_for_shade, high_CI_for_shade, color = 
 #2.3 Make up figures
 ############################
 
-#Create combinations of different subplots together to be more efficient
-maps=[ax_map0,ax_map1,ax_map2]
-hists=[ax_hist0,ax_hist1,ax_hist2]
-corrs=[ax_corr0,ax_corr1,ax_corr2]
-subplots=[]
-subplots.extend(maps)
-subplots.extend(hists)
-subplots.extend(corrs)
+#############
+#All subplots
+#############
+
+#Fade out the standard frame
+
+for subplot in subplots:
+	for pos in ['top','bottom','left','right']:
+		#subplot.spines[pos].set_linewidth(0.7)
+		subplot.spines[pos].set_color('0.6')
+
 
 #############
 #All maps
@@ -372,9 +432,7 @@ for map_ax in maps:
 #All hists
 #############
 for hist_ax in hists:
-	#Set labels
-	hist_ax.set_xlabel(x_label)
-	hist_ax.set_ylabel('# of observations')
+	print 'All hists'
 
 #############
 #All corrs
@@ -388,41 +446,37 @@ for corr_ax in corrs:
 	corr_ax.set_ylim(0,df['sickdays'].max()+1)
 
 #############
-#Ax_map0
+#Ax_map0_0
 #############
 #Set title
-title_ax_map0= 'Household locations'
-ax_map0.set_title(title_ax_map0,fontsize=10)
+title_ax_map0_0= 'Household locations'
+ax_map0_0.set_title(title_ax_map0_0,fontsize=10)
 
 #Set n=x box
 n_obs_1=_str=df.shape[0]
 n_text_1= 'n = %s' %n_obs_1
-ax_map0.text(0.03,0.05, n_text_1, ha='left', va='bottom', fontsize=7, color='0.2',
+ax_map0_0.text(0.03,0.05, n_text_1, ha='left', va='bottom', fontsize=7, color='0.2',
            bbox={'facecolor':'white', 'alpha':0.9,'edgecolor':'0.2','ls':'--','lw':'0.4'},
-           transform=ax_map0.transAxes)
+           transform=ax_map0_0.transAxes)
+
+
+#############
+#Ax_map0_1 and ax_map1_1
+#############
+
+#Set title
+title_ax_map0_1= 'Income'
+ax_map0_1.set_title(title_ax_map0_1,fontsize=8)
+
+title_ax_map1_1= 'Sick days'
+ax_map1_1.set_title(title_ax_map1_1,fontsize=8)
+
 
 #############
 #Ax_map1
 #############
 
 ax_map1.axvline(0.5, color='grey', lw=2)
-
-'''
-# Create a Rectangle patch
-rect2_1 = patches.Rectangle((0.01,0.01),0.49,0.98,lw=1,edgecolor='r',facecolor='none',
-		transform=ax_map1.transAxes)
-rect2_2 = patches.Rectangle((0.51,0.01),0.48,0.98,lw=1,edgecolor='b',facecolor='none',
-		transform=ax_map1.transAxes)
-
-# Add patches to figure 
-ax_map1.add_patch(rect2_1)
-ax_map1.add_patch(rect2_2)
-
-# Fade out the standard frame
-#for pos in ['top','bottom','left','right']:
-    #ax_map1.spines[pos].set_linewidth(0.5)
-    #ax_map1.spines[pos].set_color('0.6')
-'''
 
 #Set n=x box
 n_obs_21=_str=df2_1.shape[0]
@@ -436,8 +490,6 @@ n_text_22= 'n = %s' %n_obs_22
 ax_map1.text(0.97,0.05, n_text_22, ha='right', va='bottom', fontsize=7, color='0.2',
            bbox={'facecolor':'white', 'alpha':0.9,'edgecolor':'0.2','ls':'--','lw':'0.4'},
            transform=ax_map1.transAxes)
-
-
 
 #############
 #Ax_map2
@@ -475,13 +527,20 @@ ax_map2.text(0.97,0.05, n_text_44, ha='right', va='bottom', fontsize=7, color='0
 
 
 #############
-#Ax_hist0
+#Ax_hist row 0
 #############
+
+title_ax_hist_row00= 'Income (/year)'
+title_ax_hist_row01= 'Sick days (/year)'
+
+ax_hist0_0.set_title(title_ax_hist_row00,fontsize=10)
+ax_hist0_1.set_title(title_ax_hist_row01,fontsize=10)
 
 
 #############
 #Ax_hist1
 #############\
+
 
 #############
 #Ax_hist2
@@ -502,9 +561,25 @@ ax_corr0.set_title(title_ax_corr0,fontsize=10)
 #############
 
 
+
+#############
+#Large figure
+#############
+#Set figure titles
+#title_text_1= 'Spatial Delineation'
+#fig.text(0.16,0.96, title_text_1, ha='center', va='center', fontsize=16, color='black')
+
+title_text_1= 'Spatial Delineations'
+fig.text(0.15,0.62, title_text_1, ha='center', va='center', fontsize=14, color='black')
+
+
+title_text_2= 'Observations'
+fig.text(0.65,0.96, title_text_2, ha='center', va='center', fontsize=16, color='black')
+
 ############################
 #2.4 Save or show
 ############################
+
 plt.show()
 
 #outputfile='/Users/Metti_Hoof/Desktop/maupvis.png'

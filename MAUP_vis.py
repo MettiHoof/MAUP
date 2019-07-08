@@ -83,12 +83,15 @@ y_coord=np.concatenate((y_coord_street1, y_coord_street2, y_coord_rand))
 #income (x) from normal poission distribution around 40k
 lamda = 40 # mean and standard deviation
 x=np.random.poisson(lamda,n)*1000
-x_label='income per year'
+x_label='Income per year'
 
 #number of annual sick days (y) from uniform distribution
-y_min, y_max = 1,20
-y = np.random.randint(low=y_min, high=y_max, size=n)
-y_label='sick days per year'
+#y_min, y_max = 1,20
+#y = np.random.randint(low=y_min, high=y_max, size=n)
+
+#number of annual sick days (y) from normal poission distribution around 9
+y=np.random.poisson(9,n)
+y_label='Sick days per year'
 
 ############################
 #1.3 Put all data together in a dataframe
@@ -154,7 +157,11 @@ gs_map_inner=gridspec.GridSpecFromSubplotSpec(11,20,subplot_spec=gs_map[0,0])
 
 gs_hist0_inner=gridspec.GridSpecFromSubplotSpec(1,2,subplot_spec=gs_hist[0,0])
 gs_hist1_inner=gridspec.GridSpecFromSubplotSpec(2,2,subplot_spec=gs_hist[1,0])
-gs_hist2_inner=gridspec.GridSpecFromSubplotSpec(2,4,subplot_spec=gs_hist[2,0])
+
+gs_hist2_inner=gridspec.GridSpecFromSubplotSpec(1,2,subplot_spec=gs_hist[2,0])
+
+gs_hist2_inner_inner0=gridspec.GridSpecFromSubplotSpec(2,2,subplot_spec=gs_hist2_inner[0,0])
+gs_hist2_inner_inner1=gridspec.GridSpecFromSubplotSpec(2,2,subplot_spec=gs_hist2_inner[0,1])
 
 #Naming gridblocks
 #ax_map0=plt.subplot(gs_map[0,0]) #row,col
@@ -174,7 +181,7 @@ ax_hist1_0=plt.subplot(gs_hist1_inner[0,0])#row,col
 ax_hist1_1=plt.subplot(gs_hist1_inner[0,1])
 ax_hist2_0=plt.subplot(gs_hist1_inner[1,0])
 ax_hist2_1=plt.subplot(gs_hist1_inner[1,1])
-
+'''
 ax_hist3_0=plt.subplot(gs_hist2_inner[0,0])#row,col
 ax_hist3_1=plt.subplot(gs_hist2_inner[0,1])
 ax_hist3_2=plt.subplot(gs_hist2_inner[0,2])#row,col
@@ -184,22 +191,17 @@ ax_hist4_0=plt.subplot(gs_hist2_inner[1,0])
 ax_hist4_1=plt.subplot(gs_hist2_inner[1,1])
 ax_hist4_2=plt.subplot(gs_hist2_inner[1,2])
 ax_hist4_3=plt.subplot(gs_hist2_inner[1,3])
-
 '''
-ax_hist0_0=plt.subplot(gs_hist[0,0])
-ax_hist1_0=plt.subplot(gs_hist[1,0])
-ax_hist2_0=plt.subplot(gs_hist[2,0])
-ax_hist3_0=plt.subplot(gs_hist[3,0])
-ax_hist4_0=plt.subplot(gs_hist[4,0])
-ax_hist5_0=plt.subplot(gs_hist[5,0])
 
-ax_hist0_1=plt.subplot(gs_hist[0,1])
-ax_hist1_1=plt.subplot(gs_hist[1,1])
-ax_hist2_1=plt.subplot(gs_hist[2,1])
-ax_hist3_1=plt.subplot(gs_hist[3,1])
-ax_hist4_1=plt.subplot(gs_hist[4,1])
-ax_hist5_1=plt.subplot(gs_hist[5,1])
-'''
+ax_hist3_0=plt.subplot(gs_hist2_inner_inner0[0,0])#row,col
+ax_hist3_1=plt.subplot(gs_hist2_inner_inner0[0,1])
+ax_hist4_0=plt.subplot(gs_hist2_inner_inner0[1,0])#row,col
+ax_hist4_1=plt.subplot(gs_hist2_inner_inner0[1,1])
+
+ax_hist3_2=plt.subplot(gs_hist2_inner_inner1[0,0])
+ax_hist3_3=plt.subplot(gs_hist2_inner_inner1[0,1])
+ax_hist4_2=plt.subplot(gs_hist2_inner_inner1[1,0])
+ax_hist4_3=plt.subplot(gs_hist2_inner_inner1[1,1])
 
 ax_corr0=plt.subplot(gs_corr[0,0])
 ax_corr1=plt.subplot(gs_corr[1,0])
@@ -209,6 +211,10 @@ ax_corr2=plt.subplot(gs_corr[2,0])
 #Create combinations of different subplots together to be more efficient
 maps=[ax_map0_0,ax_map0_1,ax_map1_1,ax_map1,ax_map2]
 hists=[ax_hist0_0,ax_hist0_1,ax_hist1_0,ax_hist1_1,ax_hist2_0,ax_hist2_1,ax_hist3_0,ax_hist3_1,ax_hist3_2,ax_hist3_3,ax_hist4_0,ax_hist4_1,ax_hist4_2,ax_hist4_3]
+
+hists_left=[ax_hist0_0,ax_hist1_0,ax_hist2_0,ax_hist3_0,ax_hist3_1,ax_hist4_0,ax_hist4_1]
+hists_right=[ax_hist0_1,ax_hist1_1,ax_hist2_1,ax_hist3_2,ax_hist3_3,ax_hist4_2,ax_hist4_3]
+
 corrs=[ax_corr0,ax_corr1,ax_corr2]
 subplots=[]
 subplots.extend(maps)
@@ -233,8 +239,6 @@ color_dict4={'4_1':colorbrew[0],
 			'4_2':colorbrew[1],
 			'4_3':colorbrew[2],
 			'4_4':colorbrew[3]}
-
-
 
 ############################
 #2.2 Plot figures based on input data
@@ -265,7 +269,6 @@ ax_map2.scatter(df4_4['x_coord'],df4_4['y_coord'],c=color_dict4['4_4'])#, c=colo
 #for hist_ax in hists:
 #	hist_ax.hist(x)
 
-
 #ax_hist all together delineation
 ax_hist0_0.hist(df['income'])
 ax_hist0_1.hist(df['sickdays'])
@@ -277,20 +280,16 @@ ax_hist1_1.hist(df2_1['sickdays'],color=color_dict2['2_1'])
 ax_hist2_0.hist(df2_2['income'],color=color_dict2['2_2'])
 ax_hist2_1.hist(df2_2['sickdays'],color=color_dict2['2_2'])
 
-
 #ax_hist second delineation
 ax_hist3_0.hist(df4_1['income'],color=color_dict4['4_1'])
-ax_hist3_1.hist(df4_1['sickdays'],color=color_dict4['4_1'])
-
-ax_hist3_2.hist(df4_3['income'],color=color_dict4['4_3'])
-ax_hist3_3.hist(df4_3['sickdays'],color=color_dict4['4_3'])
-
+ax_hist3_1.hist(df4_3['income'],color=color_dict4['4_3'])
 ax_hist4_0.hist(df4_2['income'],color=color_dict4['4_2'])
-ax_hist4_1.hist(df4_2['sickdays'],color=color_dict4['4_2'])
+ax_hist4_1.hist(df4_4['income'],color=color_dict4['4_4'])
 
-ax_hist4_2.hist(df4_4['income'],color=color_dict4['4_4'])
+ax_hist3_2.hist(df4_1['sickdays'],color=color_dict4['4_1'])
+ax_hist3_3.hist(df4_3['sickdays'],color=color_dict4['4_3'])
+ax_hist4_2.hist(df4_2['sickdays'],color=color_dict4['4_2'])
 ax_hist4_3.hist(df4_4['sickdays'],color=color_dict4['4_4'])
-
 
 
 #############
@@ -304,39 +303,9 @@ def regr_to_plot(x,y):
 	p = np.poly1d(z)
 
 	fitted_y_values=p(x)
-	#ax0.plot(df_filled[x],p(df_filled[x]),':',c='grey',lw=1)
-	'''
-	#Get trendline by linear regression
-	regr = sm.OLS(y, x)
-	regr_result = regr.fit()
-	st, regr_data, headers = summary_table(regr_result, alpha=0.05)
-	fitted_y_values = regr_data[:,2]
-	predict_mean_ci_low, predict_mean_ci_upp = regr_data[:,4:6].T
-
-	# Data for regions where we want to shade to indicate the intervals has to be sorted by the x axis to display correctly
-	CI_df = pd.DataFrame(columns = ['x_data', 'low_CI', 'upper_CI'])
-	CI_df['x_data'] = x
-	CI_df['low_CI'] = predict_mean_ci_low
-	CI_df['upper_CI'] = predict_mean_ci_upp
-	CI_df.sort_values('x_data', inplace = True)
-	'''
 
 	return fitted_y_values,1,1,1 #CI_df['x_data'], CI_df['low_CI'], CI_df['upper_CI']
 
-'''
-#Plot scatter, regression line and interval
-for corr_ax in corrs:
-
-	#Get data for each corr based on partitions
-	fitted_y_values, x_for_shade, low_CI_for_shade, high_CI_for_shade=regr_to_plot(x,y)
-
-
-	#Plot scatter, regression line and interval
-	corr_ax.scatter(x,y)
-	corr_ax.plot(x, fitted_y_values, lw = 2, color = '#539caf', alpha = 1)
-	corr_ax.fill_between(x_for_shade, low_CI_for_shade, high_CI_for_shade, color = '#539caf', alpha = 0.4, label = '95% CI')
-
-'''
 #ax_corr0
 ax_corr0.scatter(df['income'],df['sickdays'])
 fitted_y_values0, x_for_shade0, low_CI_for_shade0, high_CI_for_shade0=regr_to_plot(df['income'],df['sickdays'])
@@ -344,8 +313,8 @@ ax_corr0.plot(df['income'],fitted_y_values0,lw = 2,color = '#539caf', alpha = 1)
 #ax_corr0.fill_between(x_for_shade0, low_CI_for_shade0, high_CI_for_shade0, color = '#539caf', alpha = 0.4, label = '95% CI')
 
 #ax_corr1
-ax_corr1.scatter(df2_1['income'].mean(),df2_1['sickdays'].mean(),marker="s")#, c=color_dict2['21'])
-ax_corr1.scatter(df2_2['income'].mean(),df2_2['sickdays'].mean(),marker="s")#, c=color_dict2['22'])
+ax_corr1.scatter(df2_1['income'].mean(),df2_1['sickdays'].mean(),marker="s",color=color_dict2['2_1'])#, c=color_dict2['21'])
+ax_corr1.scatter(df2_2['income'].mean(),df2_2['sickdays'].mean(),marker="s",color=color_dict2['2_2'])#, c=color_dict2['22'])
 
 income_agg_for_2=[df2_1['income'].mean(),df2_2['income'].mean()]
 sickdays_agg_for_2=[df2_1['sickdays'].mean(),df2_2['sickdays'].mean()]
@@ -355,10 +324,10 @@ ax_corr1.plot(income_agg_for_2,fitted_y_values1,lw = 2,color = '#539caf', alpha 
 #ax_corr1.fill_between(x_for_shade1, low_CI_for_shade1, high_CI_for_shade1, color = '#539caf', alpha = 0.4, label = '95% CI')
 
 #ax_corr2
-ax_corr2.scatter(df4_1['income'].mean(),df4_1['sickdays'].mean(),marker="s")#, c=color_dict4['41'])
-ax_corr2.scatter(df4_2['income'].mean(),df4_2['sickdays'].mean(),marker="s")#, c=color_dict4['42'])
-ax_corr2.scatter(df4_3['income'].mean(),df4_3['sickdays'].mean(),marker="s")#, c=color_dict4['43'])
-ax_corr2.scatter(df4_4['income'].mean(),df4_4['sickdays'].mean(),marker="s")#, c=color_dict4['44'])
+ax_corr2.scatter(df4_1['income'].mean(),df4_1['sickdays'].mean(),marker="s",color=color_dict4['4_1'])#, c=color_dict4['41'])
+ax_corr2.scatter(df4_2['income'].mean(),df4_2['sickdays'].mean(),marker="s",color=color_dict4['4_2'])#, c=color_dict4['42'])
+ax_corr2.scatter(df4_3['income'].mean(),df4_3['sickdays'].mean(),marker="s",color=color_dict4['4_3'])#, c=color_dict4['43'])
+ax_corr2.scatter(df4_4['income'].mean(),df4_4['sickdays'].mean(),marker="s",color=color_dict4['4_4'])#, c=color_dict4['44'])
 
 income_agg_for_4=[df4_1['income'].mean(),df4_2['income'].mean(),df4_3['income'].mean(),df4_4['income'].mean()]
 sickdays_agg_for_4=[df4_1['sickdays'].mean(),df4_2['sickdays'].mean(),df4_3['sickdays'].mean(),df4_4['sickdays'].mean()]
@@ -368,39 +337,6 @@ ax_corr2.plot(income_agg_for_4,fitted_y_values2,lw = 2,color = '#539caf', alpha 
 #ax_corr2.fill_between(x_for_shade2, low_CI_for_shade2, high_CI_for_shade2, color = '#539caf', alpha = 0.4, label = '95% CI')
 
 
-
-
-'''
-ax_corr1.scatter(df2_1['x_coord'],df2_1['y_coord'])#, c=color_dict2['21'])
-ax_corr1.scatter(df2_2['x_coord'],df2_2['y_coord'])#, c=color_dict2['22'])
-
-ax_corr2.scatter(df4_1['x_coord'],df4_1['y_coord'])#, c=color_dict4['41'])
-ax_corr2.scatter(df4_2['x_coord'],df4_2['y_coord'])#, c=color_dict4['42'])
-ax_corr2.scatter(df4_3['x_coord'],df4_3['y_coord'])#, c=color_dict4['43'])
-ax_corr2.scatter(df4_4['x_coord'],df4_4['y_coord'])#, c=color_dict4['44'])
-'''
-
-'''
-ax_corr0.scatter(x,y)
-fitted_y_values, x_for_shade, low_CI_for_shade, high_CI_for_shade=regr_to_plot(x,y)
-ax_corr0.plot(x, fitted_y_values, lw = 2, color = '#539caf', alpha = 1)
-ax_corr0.fill_between(x_for_shade, low_CI_for_shade, high_CI_for_shade, color = '#539caf', alpha = 0.4, label = '95% CI')
-
-
-#Plot scatter, regression line and interval
-ax_corr1.scatter(x,y)
-fitted_y_values, x_for_shade, low_CI_for_shade, high_CI_for_shade=regr_to_plot(x,y)
-ax_corr1.plot(x, fitted_y_values, lw = 2, color = '#539caf', alpha = 1)
-ax_corr1.fill_between(x_for_shade, low_CI_for_shade, high_CI_for_shade, color = '#539caf', alpha = 0.4, label = '95% CI')
-
-
-#Plot scatter, regression line and interval
-ax_corr2.scatter(x,y)
-fitted_y_values, x_for_shade, low_CI_for_shade, high_CI_for_shade=regr_to_plot(x,y)
-ax_corr2.plot(x, fitted_y_values, lw = 2, color = '#539caf', alpha = 1)
-ax_corr2.fill_between(x_for_shade, low_CI_for_shade, high_CI_for_shade, color = '#539caf', alpha = 0.4, label = '95% CI')
-'''
-
 ############################
 #2.3 Make up figures
 ############################
@@ -408,9 +344,7 @@ ax_corr2.fill_between(x_for_shade, low_CI_for_shade, high_CI_for_shade, color = 
 #############
 #All subplots
 #############
-
 #Fade out the standard frame
-
 for subplot in subplots:
 	for pos in ['top','bottom','left','right']:
 		#subplot.spines[pos].set_linewidth(0.7)
@@ -428,22 +362,6 @@ for map_ax in maps:
 	#Fix y-axis
 	map_ax.set_ylim(0,1)
 
-#############
-#All hists
-#############
-for hist_ax in hists:
-	print 'All hists'
-
-#############
-#All corrs
-#############
-for corr_ax in corrs:
-	#Set labels 
-	corr_ax.set_xlabel(x_label)
-	corr_ax.set_ylabel(y_label)
-
-	corr_ax.set_xlim(df['income'].min()-1000,df['income'].max()+1000)
-	corr_ax.set_ylim(0,df['sickdays'].max()+1)
 
 #############
 #Ax_map0_0
@@ -527,11 +445,118 @@ ax_map2.text(0.97,0.05, n_text_44, ha='right', va='bottom', fontsize=7, color='0
 
 
 #############
+#All hists
+#############
+for hist_ax in hists:
+	hist_ax.tick_params(axis = 'x', which = 'major', length=2, labelsize = 8, direction = 'out',color='0.4')
+	hist_ax.tick_params(axis = 'y', which = 'major', length=2, labelsize = 8, direction = 'in',color='0.4') 
+
+	hist_ax.grid(axis='x',which = 'major', alpha = 0.7,ls='--')
+	hist_ax.grid(axis='y',which = 'major', alpha = 0.7,ls='--')
+	hist_ax.set_axisbelow(True)
+
+'''
+# Specify different settings for major and minor grids
+#ax2.grid(which = 'minor', alpha = 0.4,ls=':')
+ax2.grid(axis='y',which = 'major', alpha = 0.7,ls='--')
+ax2.grid(axis='x',which = 'major', alpha = 0.7,ls='--')
+
+# put the grid behind
+ax2.set_axisbelow(True)
+
+ax0.set_xlabel(xlabel,
+ax0.set_ylabel(ylabel,fontsize=9)
+# Specify tick label size and direction
+ax0.tick_params(axis = 'both', which = 'major', length=0, labelsize = 8, direction = 'in') 
+ax0.set_xticklabels([])
+ax0.set_yticklabels([])
+'''
+
+#############
+#All hists left
+#############
+for hist_left_ax in hists_left:
+	hist_left_ax.set_xlim(15000,80000)
+	hist_left_ax.xaxis.set_ticks([20000,40000,60000,80000])
+	hist_left_ax.set_xticklabels(['20k', '40k', '60k','80k']) 
+
+	hist_left_ax.set_ylim(0,10)
+
+#excemption for the first histogram
+ax_hist0_0.set_ylim(0,25)
+
+
+ax_hist1_0.set_xticklabels(['','', '', '','']) 
+ax_hist1_0.tick_params(axis = 'x', direction = 'in')
+  
+ax_hist3_0.set_xticklabels(['','', '', ''])
+ax_hist3_0.tick_params(axis = 'x', direction = 'in') 
+
+ax_hist3_1.set_xticklabels(['','', '', ''])
+ax_hist3_1.tick_params(axis = 'x', direction='in') 
+ax_hist3_1.set_yticklabels(['','', '', ''])
+
+ax_hist4_1.set_yticklabels(['','', '', ''])
+ 
+
+
+#############
+#All hists right
+#############
+for hist_right_ax in hists_right:
+	hist_right_ax.set_xlim(0,20)
+	hist_right_ax.xaxis.set_ticks([0,5,10,15,20])
+	#hist_right_ax.set_xticklabels(['20k', '40k', '60k','80k']) 
+
+	hist_right_ax.set_ylim(0,10)
+
+#excemption for the first histogram
+ax_hist0_1.set_ylim(0,25)
+
+
+ax_hist1_1.set_xticklabels(['','', '', '','']) 
+ax_hist1_1.tick_params(axis = 'x', direction = 'in') 
+
+
+ax_hist3_2.set_xticklabels(['','', '', ''])
+ax_hist3_2.tick_params(axis = 'x', direction = 'in')
+ 
+ax_hist3_3.set_xticklabels(['','', '', ''])
+ax_hist3_3.tick_params(axis = 'x', direction = 'in')
+ax_hist3_3.set_yticklabels(['','', '', ''])
+
+ax_hist4_3.set_yticklabels(['','', '', ''])
+
+
+
+#############
+#All hists middle
+#############
+hists_middle=[ax_hist1_0,ax_hist1_1,ax_hist2_0,ax_hist2_1]
+
+for hist_middle_ax in hists_middle:
+	hist_middle_ax.set_ylim(0,11)
+	hist_middle_ax.tick_params(axis = 'both', labelsize=7)
+
+
+
+#############
+#All hists below
+#############
+hists_below=[ax_hist3_0,ax_hist3_1,ax_hist3_2,ax_hist3_3,
+			 ax_hist4_0,ax_hist4_1,ax_hist4_2,ax_hist4_3]
+
+for hist_below_ax in hists_below:
+	hist_below_ax.set_ylim(0,11)
+	hist_below_ax.tick_params(axis = 'both', labelsize=6)
+
+
+#############
 #Ax_hist row 0
 #############
 
-title_ax_hist_row00= 'Income (/year)'
-title_ax_hist_row01= 'Sick days (/year)'
+title_ax_hist_row00= 'Income per year'
+title_ax_hist_row01= 'Sick days per year'
 
 ax_hist0_0.set_title(title_ax_hist_row00,fontsize=10)
 ax_hist0_1.set_title(title_ax_hist_row01,fontsize=10)
@@ -547,10 +572,31 @@ ax_hist0_1.set_title(title_ax_hist_row01,fontsize=10)
 #############
 
 #############
+#All corrs
+#############
+for corr_ax in corrs:
+
+	corr_ax.set_xlim(15000,80000)
+	corr_ax.xaxis.set_ticks([20000,40000,60000,80000])
+	corr_ax.set_xticklabels(['20k', '40k', '60k','80k']) 
+
+	corr_ax.set_ylim(0,df['sickdays'].max()+1)
+
+	corr_ax.tick_params(axis = 'x', which = 'major', length=2, labelsize = 9, direction = 'out',color='0.4')
+	corr_ax.tick_params(axis = 'y', which = 'major', length=2, labelsize = 9, direction = 'in',color='0.4')
+
+	corr_ax.grid(axis='x',which = 'major', alpha = 0.7,ls='--')
+	corr_ax.grid(axis='y',which = 'major', alpha = 0.7,ls='--')
+	corr_ax.set_axisbelow(True)
+
+#############
 #Ax_corr0
 #############
 title_ax_corr0= 'Observed correlations'
 ax_corr0.set_title(title_ax_corr0,fontsize=10)
+
+ax_corr0.set_xlabel(x_label, fontsize=8)
+ax_corr0.set_ylabel(y_label, fontsize=8)
 
 #############
 #Ax_corr1
@@ -559,7 +605,6 @@ ax_corr0.set_title(title_ax_corr0,fontsize=10)
 #############
 #Ax_corr2
 #############
-
 
 
 #############

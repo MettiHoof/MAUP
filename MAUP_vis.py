@@ -110,8 +110,16 @@ df['sickdays'] = y
 ############################
 
 #We create a spatial effect by introducing an income gradient from south-west to north-east
-df['income']=df['income']*(df['x_coord']*df['y_coord']+0.6)
+df['income']=df['income']*(df['y_coord']*df['y_coord']+0.6)
 
+df['test']=(df['x_coord']*10-5)
+df['sickdays']=df['sickdays']+(df['x_coord']*10-5)
+df['sickdays'] = df.sickdays.astype(int)
+df.loc[df['sickdays'] < 0, 'sickdays'] = 1
+
+'''
+df.loc[df['First Season'] > 1990, 'First Season'] = 1
+'''
 ############################
 #1.5 Split dataframe for different deliniations
 ############################
@@ -144,13 +152,14 @@ fig=plt.figure(figsize=(figsize_x_inches,figsize_y_inches))
 
 #Setting up large gridSpecs
 gs_map=gridspec.GridSpec(3,1) #nrows,ncols
-gs_map.update(left=0.02, right=0.28, bottom=0.03, top=0.90, hspace=0.15) #update position of grid in figure
+gs_map.update(left=0.02, right=0.28, bottom=0.03, top=0.89, hspace=0.15) #update position of grid in figure
 
 gs_hist=gridspec.GridSpec(3,1) #nrows,ncols
-gs_hist.update(left=0.36, right=0.70, bottom=0.05, top=0.90, hspace=0.3) #update position of grid in figure
+gs_hist.update(left=0.35, right=0.70, bottom=0.05, top=0.89, hspace=0.3) #update position of grid in figure
 
 gs_corr=gridspec.GridSpec(3,1) #nrows,ncols
-gs_corr.update(left=0.75, right=0.98, bottom=0.05, top=0.90, hspace=0.3) #update position of grid in figure
+gs_corr.update(left=0.76, right=0.98, bottom=0.05, top=0.89, hspace=0.3) #update position of grid in figure
+
 
 #Setting up inner gridspecs
 gs_map_inner=gridspec.GridSpecFromSubplotSpec(11,20,subplot_spec=gs_map[0,0])
@@ -225,20 +234,20 @@ subplots.extend(corrs)
 #2.1 Setup colors
 ############################
 
-bmap = brewer2mpl.get_map('Set2', 'qualitative', 3)
+bmap = brewer2mpl.get_map('Set2', 'qualitative', 6)
 colorbrew=bmap.hex_colors
 #colorbrew.append('#808080') #put extra color grey to end because set2 only goes to 8 and we need 9 colors.
 color_dict2={'2_1':colorbrew[0],
 			'2_2':colorbrew[1]}
 
 
-bmap = brewer2mpl.get_map('Set2', 'qualitative', 4)
+bmap = brewer2mpl.get_map('Set2', 'qualitative', 6)
 colorbrew=bmap.hex_colors
 #colorbrew.append('#808080') #put extra color grey to end because set2 only goes to 8 and we need 9 colors.
-color_dict4={'4_1':colorbrew[0],
-			'4_2':colorbrew[1],
-			'4_3':colorbrew[2],
-			'4_4':colorbrew[3]}
+color_dict4={'4_1':colorbrew[2],
+			'4_2':colorbrew[3],
+			'4_3':colorbrew[4],
+			'4_4':colorbrew[5]}
 
 ############################
 #2.2 Plot figures based on input data
@@ -250,8 +259,8 @@ color_dict4={'4_1':colorbrew[0],
 #Create maps based on input data for coordinates
 ax_map0_0.scatter(df['x_coord'],df['y_coord'])
 
-ax_map0_1.scatter(df['x_coord'],df['y_coord'],c=df['income'], s=6)
-ax_map1_1.scatter(df['x_coord'],df['y_coord'],c=df['sickdays'], s=6)
+ax_map0_1.scatter(df['x_coord'],df['y_coord'],c=df['income'],cmap='Greys', s=6)
+ax_map1_1.scatter(df['x_coord'],df['y_coord'],c=df['sickdays'],cmap='Greys', s=6)
 
 ax_map1.scatter(df2_1['x_coord'],df2_1['y_coord'],color=color_dict2['2_1'])#, c=color_dict2['21'])
 ax_map1.scatter(df2_2['x_coord'],df2_2['y_coord'],color=color_dict2['2_2'])#, c=color_dict2['22'])
@@ -313,8 +322,11 @@ ax_corr0.plot(df['income'],fitted_y_values0,lw = 2,color = '#539caf', alpha = 1)
 #ax_corr0.fill_between(x_for_shade0, low_CI_for_shade0, high_CI_for_shade0, color = '#539caf', alpha = 0.4, label = '95% CI')
 
 #ax_corr1
-ax_corr1.scatter(df2_1['income'].mean(),df2_1['sickdays'].mean(),marker="s",color=color_dict2['2_1'])#, c=color_dict2['21'])
-ax_corr1.scatter(df2_2['income'].mean(),df2_2['sickdays'].mean(),marker="s",color=color_dict2['2_2'])#, c=color_dict2['22'])
+ax_corr1.scatter(df2_1['income'],df2_1['sickdays'],marker=".",s=44,alpha=0.4,edgecolors='none',color=color_dict2['2_1'])#, c=color_dict4['41'])
+ax_corr1.scatter(df2_2['income'],df2_2['sickdays'],marker=".",s=44,alpha=0.4,edgecolors='none',color=color_dict2['2_2'])#
+
+ax_corr1.scatter(df2_1['income'].mean(),df2_1['sickdays'].mean(),marker="s",s=52,color=color_dict2['2_1'])#, c=color_dict2['21'])
+ax_corr1.scatter(df2_2['income'].mean(),df2_2['sickdays'].mean(),marker="s",s=52,color=color_dict2['2_2'])#, c=color_dict2['22'])
 
 income_agg_for_2=[df2_1['income'].mean(),df2_2['income'].mean()]
 sickdays_agg_for_2=[df2_1['sickdays'].mean(),df2_2['sickdays'].mean()]
@@ -324,10 +336,17 @@ ax_corr1.plot(income_agg_for_2,fitted_y_values1,lw = 2,color = '#539caf', alpha 
 #ax_corr1.fill_between(x_for_shade1, low_CI_for_shade1, high_CI_for_shade1, color = '#539caf', alpha = 0.4, label = '95% CI')
 
 #ax_corr2
-ax_corr2.scatter(df4_1['income'].mean(),df4_1['sickdays'].mean(),marker="s",color=color_dict4['4_1'])#, c=color_dict4['41'])
-ax_corr2.scatter(df4_2['income'].mean(),df4_2['sickdays'].mean(),marker="s",color=color_dict4['4_2'])#, c=color_dict4['42'])
-ax_corr2.scatter(df4_3['income'].mean(),df4_3['sickdays'].mean(),marker="s",color=color_dict4['4_3'])#, c=color_dict4['43'])
-ax_corr2.scatter(df4_4['income'].mean(),df4_4['sickdays'].mean(),marker="s",color=color_dict4['4_4'])#, c=color_dict4['44'])
+
+ax_corr2.scatter(df4_1['income'],df4_1['sickdays'],marker=".",s=44,alpha=0.3,edgecolors='none',color=color_dict4['4_1'])#, c=color_dict4['41'])
+ax_corr2.scatter(df4_2['income'],df4_2['sickdays'],marker=".",s=44,alpha=0.3,edgecolors='none',color=color_dict4['4_2'])#, c=color_dict4['42'])
+ax_corr2.scatter(df4_3['income'],df4_3['sickdays'],marker=".",s=44,alpha=0.3,edgecolors='none',color=color_dict4['4_3'])#, c=color_dict4['43'])
+ax_corr2.scatter(df4_4['income'],df4_4['sickdays'],marker=".",s=44,alpha=0.3,edgecolors='none',color=color_dict4['4_4'])
+
+ax_corr2.scatter(df4_1['income'].mean(),df4_1['sickdays'].mean(),marker="s",s=52,edgecolors='none',color=color_dict4['4_1'])#, c=color_dict4['41'])
+ax_corr2.scatter(df4_2['income'].mean(),df4_2['sickdays'].mean(),marker="s",s=52,edgecolors='none',color=color_dict4['4_2'])#, c=color_dict4['42'])
+ax_corr2.scatter(df4_3['income'].mean(),df4_3['sickdays'].mean(),marker="s",s=52,edgecolors='none',color=color_dict4['4_3'])#, c=color_dict4['43'])
+ax_corr2.scatter(df4_4['income'].mean(),df4_4['sickdays'].mean(),marker="s",s=52,edgecolors='none',color=color_dict4['4_4'])#, c=color_dict4['44'])
+
 
 income_agg_for_4=[df4_1['income'].mean(),df4_2['income'].mean(),df4_3['income'].mean(),df4_4['income'].mean()]
 sickdays_agg_for_4=[df4_1['sickdays'].mean(),df4_2['sickdays'].mean(),df4_3['sickdays'].mean(),df4_4['sickdays'].mean()]
@@ -535,7 +554,7 @@ ax_hist4_3.set_yticklabels(['','', '', ''])
 hists_middle=[ax_hist1_0,ax_hist1_1,ax_hist2_0,ax_hist2_1]
 
 for hist_middle_ax in hists_middle:
-	hist_middle_ax.set_ylim(0,11)
+	hist_middle_ax.set_ylim(0,13)
 	hist_middle_ax.tick_params(axis = 'both', labelsize=7)
 
 
@@ -561,6 +580,7 @@ title_ax_hist_row01= 'Sick days per year'
 ax_hist0_0.set_title(title_ax_hist_row00,fontsize=10)
 ax_hist0_1.set_title(title_ax_hist_row01,fontsize=10)
 
+ax_hist0_0.set_ylabel('Households',fontsize=10)
 
 #############
 #Ax_hist1
@@ -580,10 +600,14 @@ for corr_ax in corrs:
 	corr_ax.xaxis.set_ticks([20000,40000,60000,80000])
 	corr_ax.set_xticklabels(['20k', '40k', '60k','80k']) 
 
-	corr_ax.set_ylim(0,df['sickdays'].max()+1)
+	#corr_ax.set_ylim(0,df['sickdays'].max()+1)
 
-	corr_ax.tick_params(axis = 'x', which = 'major', length=2, labelsize = 9, direction = 'out',color='0.4')
-	corr_ax.tick_params(axis = 'y', which = 'major', length=2, labelsize = 9, direction = 'in',color='0.4')
+	corr_ax.set_ylim(0,16)
+	corr_ax.yaxis.set_ticks([0,5,10,15,20])
+	corr_ax.set_yticklabels(['0', '5', '10','15','20']) 
+
+	corr_ax.tick_params(axis = 'x', which = 'major', length=2, labelsize = 8, direction = 'out',color='0.4')
+	corr_ax.tick_params(axis = 'y', which = 'major', length=2, labelsize = 8, direction = 'in',color='0.4')
 
 	corr_ax.grid(axis='x',which = 'major', alpha = 0.7,ls='--')
 	corr_ax.grid(axis='y',which = 'major', alpha = 0.7,ls='--')
@@ -592,11 +616,11 @@ for corr_ax in corrs:
 #############
 #Ax_corr0
 #############
-title_ax_corr0= 'Observed correlations'
+title_ax_corr0= 'Income per year'
 ax_corr0.set_title(title_ax_corr0,fontsize=10)
 
-ax_corr0.set_xlabel(x_label, fontsize=8)
-ax_corr0.set_ylabel(y_label, fontsize=8)
+#ax_corr0.set_xlabel(x_label, fontsize=8)
+ax_corr0.set_ylabel(y_label, fontsize=10)
 
 #############
 #Ax_corr1
@@ -611,15 +635,17 @@ ax_corr0.set_ylabel(y_label, fontsize=8)
 #Large figure
 #############
 #Set figure titles
-#title_text_1= 'Spatial Delineation'
-#fig.text(0.16,0.96, title_text_1, ha='center', va='center', fontsize=16, color='black')
-
 title_text_1= 'Spatial Delineations'
-fig.text(0.15,0.62, title_text_1, ha='center', va='center', fontsize=14, color='black')
+fig.text(0.16,0.96, title_text_1, ha='center', va='center', fontsize=16, color='black')
 
+#title_text_1= 'Spatial Delineations'
+#fig.text(0.15,0.62, title_text_1, ha='center', va='center', fontsize=14, color='black')
 
-title_text_2= 'Observations'
+title_text_2= 'Empirical Observations'
 fig.text(0.65,0.96, title_text_2, ha='center', va='center', fontsize=16, color='black')
+
+
+
 
 ############################
 #2.4 Save or show

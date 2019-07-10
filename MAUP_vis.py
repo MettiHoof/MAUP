@@ -115,7 +115,7 @@ df['income']=df['income']*(df['y_coord']*df['y_coord']+0.6)
 df['test']=(df['x_coord']*10-5)
 df['sickdays']=df['sickdays']+(df['x_coord']*10-5)
 df['sickdays'] = df.sickdays.astype(int)
-df.loc[df['sickdays'] < 0, 'sickdays'] = 1
+df.loc[df['sickdays'] <= 0, 'sickdays'] = 2
 
 '''
 df.loc[df['First Season'] > 1990, 'First Season'] = 1
@@ -152,13 +152,13 @@ fig=plt.figure(figsize=(figsize_x_inches,figsize_y_inches))
 
 #Setting up large gridSpecs
 gs_map=gridspec.GridSpec(3,1) #nrows,ncols
-gs_map.update(left=0.02, right=0.28, bottom=0.03, top=0.89, hspace=0.15) #update position of grid in figure
+gs_map.update(left=0.02, right=0.28, bottom=0.03, top=0.88, hspace=0.15) #update position of grid in figure
 
 gs_hist=gridspec.GridSpec(3,1) #nrows,ncols
-gs_hist.update(left=0.35, right=0.70, bottom=0.05, top=0.89, hspace=0.3) #update position of grid in figure
+gs_hist.update(left=0.35, right=0.70, bottom=0.05, top=0.88, hspace=0.3) #update position of grid in figure
 
 gs_corr=gridspec.GridSpec(3,1) #nrows,ncols
-gs_corr.update(left=0.76, right=0.98, bottom=0.05, top=0.89, hspace=0.3) #update position of grid in figure
+gs_corr.update(left=0.76, right=0.98, bottom=0.05, top=0.88, hspace=0.3) #update position of grid in figure
 
 
 #Setting up inner gridspecs
